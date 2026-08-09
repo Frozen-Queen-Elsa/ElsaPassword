@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo UI - Tiện Ích (Extension)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: '#4A90E2', accent: '#00E5FF' },
+                    boxShadow: { 'glow': '0 0 10px rgba(0, 229, 255, 0.4)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            /* Trình duyệt popup không có body to, nên ta giả lập màn hình nền xám của Windows, popup nổi lên */
+            background: #e2e8f0; 
+            display: flex; justify-content: center; align-items: flex-start; padding-top: 50px; height: 100vh; margin: 0;
+            font-family: sans-serif;
+        }
+        /* Khung popup extension (Kích thước cố định của Chrome popup) */
+        .extension-popup {
+            width: 360px; height: 500px;
+            background-image: url('https://images.unsplash.com/photo-1549880181-58079a40590a?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
+            color: white;
+        }
+        
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.7); backdrop-filter: blur(10px);
+            height: 100%; width: 100%;
+            display: flex; flex-direction: column; padding: 16px;
+        }
+        .elsa-input {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; border-radius: 8px; padding: 10px 12px; width: 100%;
+            font-size: 14px; transition: all 0.3s;
+        }
+        .elsa-input:focus { outline: none; border-color: #00E5FF; box-shadow: 0 0 8px rgba(0,229,255,0.4); }
+        .elsa-btn {
+            background: linear-gradient(135deg, rgba(74,144,226,0.9), rgba(0,229,255,0.9));
+            padding: 10px; border-radius: 8px; font-weight: bold; width: 100%;
+            text-align: center; font-size: 14px; box-shadow: 0 4px 10px rgba(0,229,255,0.3);
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .elsa-btn:active { transform: scale(0.97); }
+    </style>
+</head>
+<body>
+
+    <!-- Giả lập Popup của Chrome/Edge khi bấm vào icon trên góc phải -->
+    <div class="extension-popup">
+        <div class="glass-panel">
+            <!-- Header -->
+            <div class="flex items-center space-x-3 mb-4 border-b border-white/20 pb-3">
+                <div class="w-8 h-8 rounded-full bg-cyan-400/20 flex items-center justify-center border border-cyan-300">👑</div>
+                <h1 class="text-lg font-bold tracking-wider text-cyan-100">ELSA VAULT</h1>
+            </div>
+
+            <!-- Phát hiện trang web -->
+            <div class="bg-blue-900/40 rounded-lg p-3 border border-blue-400/30 mb-4">
+                <p class="text-xs text-gray-300 mb-1">Đang phát hiện trang:</p>
+                <p class="text-sm font-bold text-white flex items-center">
+                    <span class="text-cyan-400 mr-2">🌐</span> facebook.com
+                </p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto pr-1 space-y-2">
+                <p class="text-xs text-cyan-200 mb-2 uppercase">Gợi ý Mật Khẩu</p>
+                
+                <!-- Gợi ý 1 -->
+                <div class="bg-white/5 p-3 rounded-lg border border-white/10 hover:bg-white/10 hover:border-cyan-400 cursor-pointer transition-colors flex justify-between items-center group">
+                    <div>
+                        <h4 class="font-bold text-sm text-white group-hover:text-cyan-300">Facebook Chính</h4>
+                        <p class="text-xs text-gray-400">elsa@arendelle.com</p>
+                    </div>
+                    <div class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-1 rounded">Điền 🪄</div>
+                </div>
+
+                <!-- Gợi ý 2 -->
+                <div class="bg-white/5 p-3 rounded-lg border border-white/10 hover:bg-white/10 hover:border-cyan-400 cursor-pointer transition-colors flex justify-between items-center group">
+                    <div>
+                        <h4 class="font-bold text-sm text-white group-hover:text-cyan-300">Facebook Phụ</h4>
+                        <p class="text-xs text-gray-400">nuhoangbanggia</p>
+                    </div>
+                    <div class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-1 rounded">Điền 🪄</div>
+                </div>
+            </div>
+
+            <!-- Nút thêm nhanh -->
+            <div class="pt-3 border-t border-white/20 mt-2">
+                <div class="elsa-btn">
+                    + THÊM MẬT KHẨU CHO TRANG NÀY
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

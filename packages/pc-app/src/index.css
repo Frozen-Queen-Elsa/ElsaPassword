@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply m-0 overflow-hidden text-slate-200 select-none;
+    /* Làm nền hoàn toàn trong suốt để lộ ra Windows đằng sau */
+    background-color: transparent !important; 
+  }
+}
+
+@layer components {
+  /* Kính Băng - Trái tim của giao diện */
+  .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-md border border-white/20 shadow-2xl;
+  }
+  
+  /* Tiêu đề thanh kéo thả cửa sổ - Electron đặc thù */
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  
+  /* Nút bấm để không bị kéo thả nhầm */
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "core-logic",
+  "version": "0.00.01",
+  "description": "Trái tim mã hóa của ElsaPassword",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "typescript": "^5.0.0"
+  }
+}
