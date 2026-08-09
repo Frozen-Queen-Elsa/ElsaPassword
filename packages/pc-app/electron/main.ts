@@ -1,17 +1,33 @@
 import { app, BrowserWindow, ipcMain, globalShortcut, shell } from 'electron';
 import path from 'path';
-import crypto from 'crypto';
+import fs from 'fs';
 import express from 'express';
-import { google } from 'googleapis'; // Chuyển lại dùng googleapis vì đã có đủ bộ đồ nghề!
+import { google } from 'googleapis'; 
 
 let mainWindow: BrowserWindow | null = null;
 
-// [ĐẠI ẤN MA THUẬT CỦA NỮ HOÀNG]
-const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID_PLACEHOLDER';
-const GOOGLE_CLIENT_SECRET = 'GOOGLE_CLIENT_SECRET_PLACEHOLDER'; // Mã Secret Nữ Hoàng ban cho!
-const REDIRECT_URI = 'http://127.0.0.1:3000/oauth2callback'; // Phải dùng 127.0.0.1 cho Desktop App
+// [ĐỌC MÃ BẢO MẬT TỪ KÉT SẮT ẨN - CauHinh.json]
+// Tuyệt đối không hardcode trong mã nguồn!
+let GOOGLE_CLIENT_ID = '';
+let GOOGLE_CLIENT_SECRET = '';
 
-// Khởi tạo OAuth2Client chuẩn chỉ 100%
+try {
+  // Đường dẫn tới file CauHinh.json ở thư mục gốc (Cách app 2 cấp thư mục)
+  const configPath = path.join(__dirname, '../../../CauHinh.json');
+  if (fs.existsSync(configPath)) {
+    const configData = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    GOOGLE_CLIENT_ID = configData.google_oauth.client_id;
+    GOOGLE_CLIENT_SECRET = configData.google_oauth.client_secret;
+    console.log("[Bảo mật] Đã nạp Thành công Mã API từ Két ẩn.");
+  } else {
+    console.error("[Bảo mật] Lỗi: Không tìm thấy file CauHinh.json!");
+  }
+} catch (e) {
+  console.error("[Bảo mật] Lỗi đọc cấu hình: ", e);
+}
+
+const REDIRECT_URI = 'http://127.0.0.1:3000/oauth2callback';
+
 const oauth2Client = new google.auth.OAuth2(
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
