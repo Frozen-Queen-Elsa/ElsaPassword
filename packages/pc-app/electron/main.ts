@@ -50,32 +50,19 @@ app.whenReady().then(() => {
   // 1. Phép thuật Đăng nhập Google thật sự (OAuth 2.0)
   ipcMain.handle('login-google', async () => {
     return new Promise((resolve, reject) => {
-      // Bật cửa sổ trình duyệt an toàn của Electron để hiện trang Login của Google
-      const authWindow = new BrowserWindow({
-        width: 500,
-        height: 600,
-        show: true,
-        webPreferences: {
-          nodeIntegration: false,
-        }
-      });
-
+      // Dùng tính năng an toàn để mở URL bằng Trình duyệt Mặc định của Hệ điều hành (Chrome/Edge)
+      // Đây là cách cực chuẩn của các App PC (như Spotify, Discord, Notion)
+      
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=https://www.googleapis.com/auth/drive.file&access_type=offline`;
       
-      authWindow.loadURL(authUrl);
+      // Mở bằng trình duyệt Chrome (để tận dụng tài khoản đã login sẵn)
+      shell.openExternal(authUrl);
 
-      // Theo dõi khi Google chuyển hướng (có chứa Code xác thực)
-      authWindow.webContents.on('will-redirect', async (event, newUrl) => {
-        // ... (Logic xử lý lấy Token thật sẽ diễn ra ở đây)
-        // Vì đây chưa có Client ID thật nên ta trả về giả lập thành công
-        authWindow.close();
+      // (Tạm thời giả lập việc người dùng copy cái CODE dán lại vào App sau khi login trên Web)
+      // Trong thực tế sẽ cần một màn hình phụ hoặc chạy localhost server để hứng code này
+      setTimeout(() => {
         resolve({ success: true, email: 'nuhoang.bang@gmail.com', token: 'fake_access_token_123' });
-      });
-
-      // Nếu cửa sổ bị đóng giữa chừng
-      authWindow.on('closed', () => {
-        reject(new Error("Đăng nhập bị hủy"));
-      });
+      }, 3000); // Đợi 3 giây mô phỏng việc thao tác trên Chrome
     });
   });
 
