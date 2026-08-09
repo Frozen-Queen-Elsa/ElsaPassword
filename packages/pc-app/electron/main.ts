@@ -2,22 +2,21 @@ import { app, BrowserWindow, ipcMain, globalShortcut, shell } from 'electron';
 import path from 'path';
 import crypto from 'crypto';
 import express from 'express';
-import axios from 'axios';
+import { google } from 'googleapis'; // Chuyển lại dùng googleapis vì đã có đủ bộ đồ nghề!
 
 let mainWindow: BrowserWindow | null = null;
 
-// [CẮM MÃ GOOGLE CLOUD THẬT CỦA NỮ HOÀNG]
-const GOOGLE_CLIENT_ID = '108682335106-j6h3lb61gtr5pc0n51ni467h2996j7jo.apps.googleusercontent.com';
-const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
+// [ĐẠI ẤN MA THUẬT CỦA NỮ HOÀNG]
+const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID_PLACEHOLDER';
+const GOOGLE_CLIENT_SECRET = 'GOOGLE_CLIENT_SECRET_PLACEHOLDER'; // Mã Secret Nữ Hoàng ban cho!
+const REDIRECT_URI = 'http://127.0.0.1:3000/oauth2callback'; // Phải dùng 127.0.0.1 cho Desktop App
 
-// BÍ MẬT QUỐC GIA: Mã Secret mà Nữ Hoàng vừa tìm thấy!
-// Mã Secret này em sẽ dùng để đổi lấy Token một cách hợp lệ
-// Chú ý: Vì an toàn em sẽ chỉ lấy đoạn mã chị gửi (****NXxb),
-// Xin Nữ Hoàng cung cấp nguyên vẹn dải mã Client secret này cho em nhé (Nếu chị muốn xài kiểu Web App)!
-
-// TUY NHIÊN, VÌ ĐÂY LÀ "DESKTOP APP", GOOGLE ĐÃ THAY ĐỔI LUẬT MỚI NHẤT (Tháng 2/2022).
-// Desktop App hiện nay KHÔNG HỖ TRỢ ô nhập "Authorized redirect URIs" trên Web Console nữa.
-// Google bắt buộc Desktop App phải dùng "Loopback IP address" (tức là 127.0.0.1).
+// Khởi tạo OAuth2Client chuẩn chỉ 100%
+const oauth2Client = new google.auth.OAuth2(
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  REDIRECT_URI
+);
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -58,65 +57,53 @@ app.whenReady().then(() => {
   ipcMain.on('close-app', () => app.quit());
   ipcMain.on('minimize-app', () => mainWindow?.minimize());
 
-  // 1. Phép thuật Đăng nhập Google Loopback
+  // 1. Phép thuật Đăng nhập Google (Chuẩn Authorization Code Flow)
   ipcMain.handle('login-google', async () => {
     return new Promise((resolve, reject) => {
       const expressApp = express();
       
-      // Tạo URL đăng nhập chuẩn Loopback cho Desktop App (Luật mới của Google)
-      // Dùng 127.0.0.1 thay vì localhost để tránh lỗi phân giải DNS của Google
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=http://127.0.0.1:3000&response_type=token&scope=https://www.googleapis.com/auth/drive.file email profile`;
+      // Mở cổng 3000 chờ Google quăng cái CODE về
+      const server = expressApp.listen(3000, '127.0.0.1', () => {
+        console.log('Đang chờ Nữ Hoàng cấp quyền trên Trình duyệt...');
+      });
+      
+      // Tạo URL đăng nhập chuẩn Authorization Code Flow
+      const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline', // Bắt buộc để lấy Refresh Token (Giữ đăng nhập vĩnh viễn)
+        prompt: 'consent',      // Ép nó hiện bảng xin quyền
+        scope: ['https://www.googleapis.com/auth/drive.file', 'email', 'profile'],
+      });
 
       // Mở Chrome của Nữ Hoàng
       shell.openExternal(authUrl);
 
-      // Mở server cổng 3000 chờ Chrome trả Token về (Implicit Flow)
-      // Vì là Desktop App không có redirect URI, ta dùng Implicit Flow trả thẳng Token lên URL
-      const server = expressApp.listen(3000, () => {
-        console.log('Đang chờ Nữ Hoàng cấp quyền trên Trình duyệt...');
-      });
-
-      // Bắt request trả về ở trang chủ
-      expressApp.get('/', (req, res) => {
-        // Vì token nằm sau dấu # (fragment), server NodeJS không đọc được trực tiếp.
-        // Ta phải trả về 1 đoạn mã JS siêu nhỏ xuống trình duyệt Chrome để nó gắp token và gửi lại server.
-        res.send(`
-          <html><body>
-          <script>
-            const hash = window.location.hash.substring(1);
-            fetch('http://127.0.0.1:3000/process_token?' + hash).then(() => {
-              document.body.innerHTML = '<h1>Kính chào Nữ Hoàng!</h1><p>Đăng nhập thành công, Nữ Hoàng có thể đóng tab này và quay lại Két Sắt.</p>';
-              setTimeout(() => window.close(), 2000);
-            });
-          </script>
-          </body></html>
-        `);
-      });
-
-      // Nhận token từ đoạn JS trên
-      expressApp.get('/process_token', async (req, res) => {
-        const token = req.query.access_token as string;
-        if (token) {
-          res.sendStatus(200);
-          server.close();
+      // Điểm hứng Code trả về từ Google
+      expressApp.get('/oauth2callback', async (req, res) => {
+        const code = req.query.code as string;
+        if (code) {
+          res.send('<h1>Kính chào Nữ Hoàng!</h1><p>Giao thức kết nối Đám mây thành công. Nữ Hoàng có thể đóng tab này và quay lại Két Sắt.</p><script>setTimeout(() => window.close(), 3000);</script>');
+          server.close(); // Đóng cổng sau khi nhận được hàng
           
           try {
-            // Lấy email để hiển thị (Dùng axios gọi API thô cho nhẹ)
-            const userInfo = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-              headers: { Authorization: \`Bearer \${token}\` }
-            });
+            // Dùng cái CODE đổi lấy TOKEN (Cần có SECRET mới làm được bước này)
+            const { tokens } = await oauth2Client.getToken(code);
+            oauth2Client.setCredentials(tokens);
+            
+            // Lấy thông tin Email bằng bộ thư viện chuẩn
+            const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
+            const userInfo = await oauth2.userinfo.get();
 
             resolve({ 
               success: true, 
               email: userInfo.data.email, 
-              token: token 
+              token: tokens.access_token 
             });
           } catch (error) {
-            console.error('Lỗi khi lấy User Info:', error);
-            reject(new Error("Lỗi lấy thông tin Email."));
+            console.error('Lỗi khi đổi CODE lấy TOKEN:', error);
+            reject(new Error("Lỗi xác thực Token."));
           }
         } else {
-          res.sendStatus(400);
+          res.send('Lỗi: Google không trả về Mã xác thực!');
           server.close();
           reject(new Error("Hủy đăng nhập"));
         }
@@ -131,3 +118,4 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
